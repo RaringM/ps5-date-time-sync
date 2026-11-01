@@ -17,8 +17,8 @@ LDLIBS := -lSceNet -lSceNotification
 
 all: $(ELF)
 
-$(ELF): main.cpp
-	$(CXX) $(CXXFLAGS) -o $@ $< $(LDLIBS)
+$(ELF): main.cpp rtc_stubs.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
 clean:
 	rm -f $(ELF)

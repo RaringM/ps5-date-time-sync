@@ -38,6 +38,13 @@ int sceKernelSendNotificationRequest(int device, NotifyRequest* request,
 // headers.  Both symbols are exported by libkernel on the target.
 int gettimeofday(struct timeval*, struct timezone*);
 int settimeofday(const struct timeval*, const struct timezone*);
+
+struct SceRtcTick {
+  uint64_t tick;
+};
+
+int sceRtcGetCurrentDebugNetworkTick(SceRtcTick* tick);
+int sceRtcSetCurrentDebugNetworkTick(const SceRtcTick* tick);
 }
 
 namespace {
@@ -429,6 +436,37 @@ bool set_system_time(const struct timeval& value) {
     log_message("clock verification exceeded the allowed delta\n");
     return false;
   }
+
+  SceRtcTick debug_tick = {
+      static_cast<uint64_t>(candidate.tv_sec) * 1000000ULL +
+      static_cast<uint64_t>(candidate.tv_usec) + 62135596800000000ULL,
+  };
+  int debug_set_result = sceRtcSetCurrentDebugNetworkTick(&debug_tick);
+  if (debug_set_result != 0) {
+    log_message("sceRtcSetCurrentDebugNetworkTick failed: rc=%d\n",
+                debug_set_result);
+    return false;
+  }
+
+  SceRtcTick verified_debug_tick = {};
+  int debug_get_result = sceRtcGetCurrentDebugNetworkTick(&verified_debug_tick);
+  if (debug_get_result != 0) {
+    log_message("sceRtcGetCurrentDebugNetworkTick verification failed: rc=%d\n",
+                debug_get_result);
+    return false;
+  }
+  uint64_t debug_difference = verified_debug_tick.tick > debug_tick.tick
+                                  ? verified_debug_tick.tick - debug_tick.tick
+                                  : debug_tick.tick - verified_debug_tick.tick;
+  log_message("debug network clock verification delta: %llu microseconds\n",
+              static_cast<unsigned long long>(debug_difference));
+  if (debug_difference >
+      static_cast<uint64_t>(kMaxClockVerificationDeltaMicroseconds)) {
+    log_message("debug network clock verification exceeded the allowed delta\n");
+    return false;
+  }
+
+  log_message("debug network clock synchronization completed\n");
   return true;
 }
 

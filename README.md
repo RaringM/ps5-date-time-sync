@@ -21,6 +21,8 @@ page.
 - Validates the reply endpoint, NTP version and mode, stratum, request
   timestamp, and accepted date range before changing the clock.
 - Reads the clock back after the update and rejects failed verification.
+- Sets and verifies the separate debug network clock used by some system
+  components, including Console Feature Flag updates.
 - Preserves the console's existing timezone setting.
 - Displays one notification per execution:
 
@@ -45,7 +47,8 @@ booting the console.
 - A compatible PS5 exploit and ELF payload loader.
 - An active Internet connection.
 - Outbound UDP port 123 access for NTP.
-- An execution environment that permits `settimeofday`.
+- An execution environment that permits `settimeofday` and the debug network
+  clock APIs.
 
 The numeric Cloudflare fallbacks remove the initial dependency on DNS. If the
 router, firewall, or Internet provider blocks UDP port 123, synchronization
@@ -113,7 +116,7 @@ Try numeric Cloudflare NTP addresses
 Request and validate NTP time
       |
       v
-Update and verify the PS5 system clock
+Update and verify the PS5 system clock and debug network clock
       |
       v
 Write details to the payload output
